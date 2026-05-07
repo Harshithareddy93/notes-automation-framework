@@ -3,6 +3,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
 from pages.base_page import BasePage
 
+
 class ProductPage(BasePage):
 
     ADD_NOTE = (By.CSS_SELECTOR, "button[data-testid='add-new-note']")
@@ -15,9 +16,33 @@ class ProductPage(BasePage):
     DELETE_CONFIRM = (By.CSS_SELECTOR, "button[data-testid='note-delete-confirm']")
 
     def create_note(self, title, desc):
+
+        WebDriverWait(self.driver, 20).until(
+            EC.visibility_of_element_located(self.ADD_NOTE)
+        )
+
+        WebDriverWait(self.driver, 20).until(
+            EC.element_to_be_clickable(self.ADD_NOTE)
+        )
+
         self.click(self.ADD_NOTE)
+
+        WebDriverWait(self.driver, 20).until(
+            EC.visibility_of_element_located(self.TITLE)
+        )
+
         self.type(self.TITLE, title)
+
+        WebDriverWait(self.driver, 20).until(
+            EC.visibility_of_element_located(self.DESCRIPTION)
+        )
+
         self.type(self.DESCRIPTION, desc)
+
+        WebDriverWait(self.driver, 20).until(
+            EC.element_to_be_clickable(self.SAVE)
+        )
+
         self.click(self.SAVE)
 
     def get_all_notes(self):
@@ -25,6 +50,7 @@ class ProductPage(BasePage):
 
     def note_card_locator_for_title(self, title):
         escaped_title = title.replace('"', '\\"')
+
         return (
             By.XPATH,
             f"//div[@data-testid='note-card'][.//div[@data-testid='note-card-title' and normalize-space()=\"{escaped_title}\"]]"
@@ -32,6 +58,7 @@ class ProductPage(BasePage):
 
     def wait_for_note_presence(self, title, timeout=20):
         locator = self.note_card_locator_for_title(title)
+
         return WebDriverWait(self.driver, timeout).until(
             EC.presence_of_element_located(locator)
         )
@@ -49,27 +76,44 @@ class ProductPage(BasePage):
         return WebDriverWait(self.driver, timeout).until(element_absent)
 
     def delete_note_by_index(self, index=0):
+
+        WebDriverWait(self.driver, 20).until(
+            EC.presence_of_all_elements_located(self.NOTES)
+        )
+
         notes = self.get_all_notes()
+
         if len(notes) <= index:
             raise IndexError("No note found at index {}".format(index))
 
         delete_btn = notes[index].find_element(*self.NOTE_DELETE)
-        self.driver.execute_script("arguments[0].click();", delete_btn)
-        self.wait(self.DELETE_CONFIRM)
-        self.click(self.DELETE_CONFIRM)
 
-    def delete_note_by_title(self, title):
-        locator = self.note_card_locator_for_title(title)
-        note_card = WebDriverWait(self.driver, 20).until(
-            EC.presence_of_element_located(locator)
-        )
-        delete_btn = note_card.find_element(*self.NOTE_DELETE)
         self.driver.execute_script("arguments[0].click();", delete_btn)
-        self.wait(self.DELETE_CONFIRM)
+
         WebDriverWait(self.driver, 20).until(
             EC.element_to_be_clickable(self.DELETE_CONFIRM)
         )
+
         self.click(self.DELETE_CONFIRM)
+
+    def delete_note_by_title(self, title):
+
+        locator = self.note_card_locator_for_title(title)
+
+        note_card = WebDriverWait(self.driver, 20).until(
+            EC.presence_of_element_located(locator)
+        )
+
+        delete_btn = note_card.find_element(*self.NOTE_DELETE)
+
+        self.driver.execute_script("arguments[0].click();", delete_btn)
+
+        WebDriverWait(self.driver, 20).until(
+            EC.element_to_be_clickable(self.DELETE_CONFIRM)
+        )
+
+        self.click(self.DELETE_CONFIRM)
+
         self.wait_for_note_absence(title, timeout=30)
 
     def delete_first_note(self):
